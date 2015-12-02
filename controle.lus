@@ -1,0 +1,33 @@
+-- Partie controlleur
+
+-- Fonction transition
+node transition (e0,e1,e2,e3,e4,e5,e6,e7,e8,begin,z:bool) returns (s0,s1,s2,s3,s4,s5,s6,s7,s8: bool)
+let
+	s0 = e8;
+	s1 = e0 and begin;
+	s2 = e1 and e7;
+	s3 = e2 and not z;
+	s4 = e3;
+	s5 = e4;
+	s6 = e5;
+	s7 = e6;
+	s8 = e2 and z;
+tel
+
+node sortie (e0,e1,e2,e3,e4,e5,e6,e7,e8: bool) returns (SRes,end,charV0,charV1,charV2,charI,resetI,resetV0,op1S1,op1S2,op2S1,op2S2,opUAL1,opUAL2: bool)
+let
+	SRes = e0;
+	end = e8;
+	charV0 = e5;
+	charV1 = e1 + 
+	charV2 = 
+	charI
+	resetI
+	resetV0
+	op1S1
+	op1S2
+	op2S1
+	op2S2
+	opUAL1
+	opUAL2
+tel

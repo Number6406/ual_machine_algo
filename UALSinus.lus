@@ -1,0 +1,208 @@
+--------------------------------------------------------------
+-- Additionneur 1 bit
+node add1bit( x, y, rin : bool)
+             returns
+            (s, rout : bool);
+let
+        s = x xor y xor rin;
+        rout = (x and y) or (x and rin) or (y and rin);
+tel
+
+--------------------------------------------------------------
+--tableau de tableau m*n
+--S[i][j]= A[j]and B[i])
+--realisation recursive
+
+node tabandrec(const n,m : int; A : bool^n; B: bool^m)
+returns(S: bool^n^m);
+--attention tableau de tableau : 1er indice contenu des tableau, 2eme indice :tableau de tableau
+--indice inverse dans l'utilisation par rapport a la declaration: ici m tableau de n elements: S[0..m-1,0..n-1]
+--attention ecriture S[0..m-1][0..n-1] autre semantique
+
+let
+-- attention utiliser with au lieu de if sinon le compilateur produit un code qui boucle ?? 
+S=with (m=1) then ([B[0]^n and A])
+	else  ( tabandrec(n, m-1, A , B[0..m-2])|[B[m-1]^n and A]);
+	--| operation de concatenation de tableau
+tel;
+--------------------------------------------------------------
+--multiplieur n bits realise a partir de and 2 entrees et d'add 1 bit
+--2 operandes n bits, resultats 2*n bits
+--le multiplicande (A) est en complement a 2, il peut etre negatif
+--le multiplieur (B) est en base 2
+--Pour un multiplicande en base 2 il faut changer le 1er etage
+--multiplieur base sur des tableaux de tableaux
+--Voir le dessin 1er indice : colonne, 2eme: ligne
+
+node multnbits(const nn: int; A, B: bool^nn)
+returns(S: bool^(2*nn));
+var r, x: bool^(nn+1)^nn-1; --resultat et retenues intermediaires
+taband:bool^nn^(nn-2); --tableau des and ai bj
+let
+
+--premier etage---------
+r[0,0]= false;
+
+(x[0,0..nn-2], r[0,1..nn-1])= add1bit( B[0]^(nn-1) and A[1..nn-1], B[1]^(nn-1) and A[0..nn-2], r[0,0..nn-2]);
+
+(x[0, nn-1],r[0, nn])= add1bit(B[1] and A[nn-1], A[nn-1] and B[0], r[0,nn-1]);
+-- remplace A[nn-1]and B[0] par 0 pour un multiplicande en base 2 (non signe)
+
+x[0,nn]= r[0,nn] or ((x[0,nn-1])and(A[nn-1]));
+-- remplace x[0,nn-1] and A[nn-1] par 0 pour un multiplicande en base 2 (non signe)
+
+-- etages de 1 a nn-2-------
+r[1..nn-2,0]= false^(nn-2);--attention parenthese obligatoire
+
+x[1..nn-2,nn]=r[1..nn-2,nn] or (x[1..nn-2,nn-1]and (A[nn-1])^(nn-2)) ;
+-- remplace x[1..nn-2,nn-1] and (A[nn-1])^(nn-2) par 0 pour un multiplicande en base 2 (non signe)
+
+taband=tabandrec(nn, nn-2, A[0..nn-1],B[2..nn-1]);
+(x[1..nn-2,0..nn-1],r[1..nn-2,1..nn])= add1bit(taband, x[0..nn-3,1..nn], r[1..nn-2,0..nn-1]);
+
+--les sorties
+S[0]= A[0] and B[0];
+S[1..nn-1]= x[0..nn-2,0];
+S[nn..(2*nn-1)]= x[nn-2,1..nn];
+
+tel;
+-----------------------------------------------------------------------
+
+-- De meme pour le bus Op1 et pour le bus réesultat, on a besoin d'un multiplexeur 2 entrees sur n bits:
+
+node mux2(i,e1,e2: bool) returns (s:bool);
+let
+s=(e2 and (not i)) or (e1 and i);
+tel;
+
+--------------------------------------------------------------------------
+--------------------------------------------------------------
+-- division par 2 puissance k sur une entree sur 2*n bits, sortie sur n bits
+const k=4;
+
+node div2k (const n:int;const k:int; e: bool^(2*n)) returns (s: bool^n)
+let
+s[0..n-1]=e[k..(k+n-1)];
+tel;
+
+--------------------------------------------------------------------------
+-- AND N BITS
+--------------------------------------------------------------------------
+
+-- fonction qui calcule un AND bit a bit a partir d'une entree codee sur n bits
+-- la fonction realise des appels recursifs
+
+node ANDn ( const n : int ; ent : bool^n ) returns( sortie : bool);
+	var res : bool^n;
+let
+	res[0] = ent[0];
+	res[1..n-1] = res[0..n-2] and ent[1..n-1];
+	sortie = res[n-1];
+tel;
+
+--------------------------------------------------------------------------
+-- ZERO N BITS
+--------------------------------------------------------------------------
+
+-- fonction qui retourne 1 si l'entree a vaut 0
+
+node ZEROn ( const n : int ; a : bool^n ) returns ( r : bool );
+-- r = 1 ssi toutes les entrees ai valent 0
+let
+	r = ANDn ( n, not a );
+tel;
+
+--------------------------------------------------------------------------
+-- ADDITIONNEUR N BITS
+--------------------------------------------------------------------------
+
+node add_n_bits ( const n : int ; a , b : bool^n ; re : bool )
+returns (  r : bool^n );
+	var retint : bool^n+1;
+let
+	retint[0] = re;
+	( r, retint[1..n] ) = add1bit ( a , b , retint[0..n-1] );
+	
+tel;
+
+--------------------------------------------------------------------------
+-- UAL N BITS
+--------------------------------------------------------------------------
+
+-- A et B sont des nombres codes sur n bits en complement a 2
+-- uc1 et uc0 sont les bits de commande qui determinent l'operation a effectuer:
+--uc1 uc0 operation
+-- 0  0   op1+1
+-- 0  1   op1-op2
+-- 1  0   op1*op2 avec decalage (division par 2 puissance 4)
+-- 1  1   op1
+-- Z : Zero
+-- Z est a 1 si le resultat est nul
+-- T est le resultat sur n bits de l'operation
+
+node ual_n_bits ( const n : int ; A , B : bool^n ; uc1 , uc0 : bool )
+returns ( Z : bool ; T : bool^n );
+	-- entrees de l'additionneur calculees a partir de uc1, uc0, A et B
+	var X , Y ,R: bool^n;
+	M:bool^(2*n);
+	
+	-- retenue entrante et retenue sortante
+	v0  : bool;
+let
+	-- calcul de v0
+	v0 = not ( uc1 );
+	-- calcul des xi
+	X = A ;
+	-- calcul des yi
+	Y = not( B ) and (not (uc1)^n and uc0^n) ;
+	-- calcul des flags et du resultat a l'aide de l'additionneur n bits
+	(  R ) = add_n_bits ( n , X , Y , v0 );
+	--calcul de la multiplication
+	M=multnbits(n,A,B);
+	--choix resultat de mult decale de n bits ou autre resultat
+	T=mux2( uc1^n and not (uc0)^n, div2k(n,k,M) , R);
+	
+		--calcul flag Z
+	Z = ZEROn ( n , T );
+tel;
+
+--------------------------------------------------------------------------
+-- retourne l'entier represente en base 2  dans le booleen sur n bits
+node entiernat (const n: int; M: bool^n)
+returns (S:int);
+var i:int;
+let
+i= if (M[0]) then 1 else 0;
+S=with (n=1) then (i)
+	else  ( 2*entiernat(n-1, M[1..n-1]) + i);
+
+tel;
+--------------------------------------------------------------------------
+node puiss(const n:int;x:int)
+returns (p:int);
+let
+p=with (n=1) then (1)
+	else  ( x * puiss(n-1, x));
+tel;
+--------------------------------------------------------------------------
+-- retourne l'entier relatif represente en complement a 2  dans le booleen sur n bits
+node entierrel (const n: int; M: bool^n)
+returns (S:int);
+
+let
+-- si entier negatif alors S= valeur M en base 2 -( 2 puissance n+1)
+-- sinon S= valeur M en base 2
+S=if(M[n-1]) then (entiernat(n,M)-puiss(n+1,2)) else entiernat(n,M);
+
+tel;
+--------------------------------------------------------------------------
+const a=8;
+node instual(  A , B : bool^a ; uc1 , uc0 : bool )
+returns ( Z : bool ; T : bool^a; R:int );
+--var M:bool^(2*a);
+let
+(Z,T)=ual_n_bits ( a , A , B , uc1 , uc0  );
+
+R=entierrel(a,T);
+tel;
+
