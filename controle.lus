@@ -12,22 +12,38 @@ let
 	s6 = e5;
 	s7 = e6;
 	s8 = e2 and z;
-tel
+tel;
 
-node sortie (e0,e1,e2,e3,e4,e5,e6,e7,e8: bool) returns (SRes,end,charV0,charV1,charV2,charI,resetI,resetV0,op1S1,op1S2,op2S1,op2S2,opUAL1,opUAL2: bool)
+node sortie (e0,e1,e2,e3,e4,e5,e6,e7,e8: bool) returns (reset,end,charV0,charV1,charV2,charI,resetI,resetV0,op1S1,op1S2,op2S1,op2S2,opUAL1,opUAL2: bool)
 let
-	SRes = e0;
+	reset = e0;
 	end = e8;
 	charV0 = e5;
-	charV1 = e1 + 
-	charV2 = 
-	charI
-	resetI
-	resetV0
-	op1S1
-	op1S2
-	op2S1
-	op2S2
-	opUAL1
-	opUAL2
-tel
+	charV1 = e1 or e8;
+	charV2 = e3 or e4;
+	charI = e7;
+	resetI = e1;
+	resetV0 = e1;
+	op1S1 = e3 or e4 or e5 or e6;
+	op1S2 = e2 or e3 or e5 or e7;
+	op2S1 = e3;
+	op2S2 = e2;
+	opUAL1 = e5 or e6 or e7;
+	opUAL2 = e2 or e4 or e5 or e6;
+tel;
+
+node pc (reset,begin,z:bool) returns (end,charV0,charV1,charV2,charI,resetI,resetV0,op1S1,op1S2,op2S1,op2S2,opUAL1,opUAL2:bool)
+	var s0,s1,s2,s3,s4,s5,s6,s7,s8,e0,e1,e2,e3,e4,e5,e6,e7,e8,SRes:bool;
+let
+	(s0,s1,s2,s3,s4,s5,s6,s7,s8) = transition(e0,e1,e2,e3,e4,e5,e6,e7,e8,begin,z);
+	e0 = true -> pre s0;
+	e1 = true -> pre s1;
+	e2 = true -> pre s2;
+	e3 = true -> pre s3;
+	e4 = true -> pre s4;
+	e5 = true -> pre s5;
+	e6 = true -> pre s6;
+	e7 = true -> pre s7;
+	e8 = true -> pre s8;
+	(SRes,end,charV0,charV1,charV2,charI,resetI,resetV0,op1S1,op1S2,op2S1,op2S2,opUAL1,opUAL2) = sortie (e0,e1,e2,e3,e4,e5,e6,e7,e8);
+tel;
