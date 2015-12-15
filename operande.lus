@@ -1,3 +1,5 @@
+include "UALSinus.lus"
+
 -------------------------------
 -- partie opérative
 -------------------------------
@@ -15,12 +17,12 @@ let
 	s = i and t or not i and e;
 tel;
 
-node mux1(op1,op2,x0,i,v1,v2:bool) returns (s:bool); 
+node muxA(op1,op2,x0,i,v1,v2:bool) returns (s:bool); 
 let
 	s = (not op1 and not op1 and x0) or (not op1 and op2 and i) or (op1 and not op2 and v2) or (op1 and op2 and v1);
 tel;
 
-node mux2(op1,op2,v0,ar,p1:bool) returns (s:bool);
+node muxB(op1,op2,v0,ar,p1:bool) returns (s:bool);
 let
 	s = (not op1 and not op2 and v0) or (not op1 and op2 and ar) or (op1 and not op2 and p1);
 tel;
@@ -28,19 +30,24 @@ tel;
 node registre(const n : int; BusRes : bool^n; ch, reset : bool)
 	returns  (R : bool^n);
 let
-	R = bascule(false^n,BusRes, ch^n, reset^n);
+	R = bascule(BusRes, ch^n, reset^n);
 tel;
 
-node po (const n : int; chP1,chAr,chX0,chI,resetI,chV2,chV1,chV0,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,OpUAL1,OpUAL2,SRes,end:bool ; BusEntree : bool^n) returns (Z:bool; p1, ar, x0, i,sUAL, v2, v1, v0, op1, op2, v1, BusResultat : bool^n);
+node po (const n : int; chP1,chAr,chX0,chI,resetI,chV2,chV1,chV0,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,OpUAL1,OpUAL2,SRes,end:bool ; BusEntree : bool^n) returns (Z:bool; p1, ar, x0, i,sUAL, v2, v1, v0, A, B, BusResultat : bool^n);
 let 
-	BusResultat = mux2(not(SRes^n),BusEntree,sUAL);
-	p1 = registre(BusResultat,chP1,false);
-	ar = registre(BusResultat,chAr,false);
-	x0 = registre(BusResultat,chX0,false);
-	i = registre(BusResultat,chI,false);
-	v2 = registre(BusResultat,chV2,false);
-	v1 = registre(BusResultat,chV1,false);
-	v0 = registre(BusResultat,chV0,false);
+	BusResultat = muxES(not(SRes^n),BusEntree,sUAL);
+	p1 = registre(n,BusResultat,chP1,false);
+	ar = registre(n,BusResultat,chAr,false);
+	x0 = registre(n,BusResultat,chX0,false);
+	i	 = registre(n,BusResultat,chI ,false);
+	v2 = registre(n,BusResultat,chV2,false);
+	v1 = registre(n,BusResultat,chV1,false);
+	v0 = registre(n,BusResultat,chV0,false);
+	
+	A = muxA(Op1s1^n, Op1s2^n, x0, i, v1, v2);
+	B = muxB(Op2s1^n,Op2s2^n, v0, ar, p1);
+	
+	(Z,sUAL) = ual_n_bits (n,A,B,OpUAL1,OpUAL2); 
 tel;
 
 

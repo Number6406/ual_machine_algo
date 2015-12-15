@@ -1,0 +1,33 @@
+include "controle.lus"
+include "operande.lus"
+
+-------------------------------------------------
+-- Partie principale
+-------------------------------------------------
+
+const n = 8;
+
+node main (begin,reset,chP1,chAr,chX0 : bool; BusEntree : bool^n ) 
+	returns ( end, s0, s1, s2, s3, s4, s5, s6, s7, s8,Op1s1,Op1s2,Op2s1,Op2s2 ,OpUAL1,OpUAL2, Z,chI,resetI,chV2,chV1,chV0,resetV0,SRes: bool ; i, p1, x0, ar,UAL,v0,v1,v2,A,B,Res : int);
+
+	var valI,valX0,valAr,valP1,valUAL,valV0,valV1,valV2,valA,valB, valBusRes : bool^n;
+
+
+let
+	(Z,valP1,valAr,valX0,valI,valUAL,valV2,valV1,valV0,valA,valB,valBusRes) = po (n,chP1,chAr,chX0,chI,resetI,chV2,chV1,chV0,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,OpUAL1,OpUAL2,SRes,end,BusEntree);
+	 
+	(end,chV0,chV1,chV2,chI,resetI,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,SRes,OpUAL1,OpUAL2,s0, s1, s2, s3, s4, s5, s6, s7, s8) = pc(reset,begin, Z);
+	
+	i = entierrel (n,valI);
+	p1 = entierrel (n,valP1);
+	x0 = entierrel (n,valX0);
+	ar = entierrel (n,valAr);
+	UAL = entierrel (n,valUAL);
+	v0 = entierrel (n,valV0);
+	v1 = entierrel (n,valV1);
+	v2 = entierrel (n,valV2);
+	A = entierrel (n,valA);
+	B = entierrel (n,valB);
+	Res = entierrel (n,valBusRes);
+
+tel;
