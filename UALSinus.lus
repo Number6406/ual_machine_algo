@@ -68,7 +68,7 @@ S[nn..(2*nn-1)]= x[nn-2,1..nn];
 tel;
 -----------------------------------------------------------------------
 
--- De meme pour le bus Op1 et pour le bus réesultat, on a besoin d'un multiplexeur 2 entrees sur n bits:
+-- De meme pour le bus Op1 et pour le bus resultat, on a besoin d'un multiplexeur 2 entrees sur n bits:
 
 node mux2(i,e1,e2: bool) returns (s:bool);
 let
@@ -143,7 +143,7 @@ tel;
 node ual_n_bits ( const n : int ; A , B : bool^n ; uc1 , uc0 : bool )
 returns ( Z : bool ; T : bool^n );
 	-- entrees de l'additionneur calculees a partir de uc1, uc0, A et B
-	var X , Y ,R: bool^n;
+	var Y ,R: bool^n;
 	M:bool^(2*n);
 	
 	-- retenue entrante et retenue sortante
@@ -152,11 +152,11 @@ let
 	-- calcul de v0
 	v0 = not ( uc1 );
 	-- calcul des xi
-	X = A ;
+	-- X = A ;
 	-- calcul des yi
 	Y = not( B ) and (not (uc1)^n and uc0^n) ;
 	-- calcul des flags et du resultat a l'aide de l'additionneur n bits
-	(  R ) = add_n_bits ( n , X , Y , v0 );
+	(  R ) = add_n_bits ( n , A , Y , v0 );
 	--calcul de la multiplication
 	M=multnbits(n,A,B);
 	--choix resultat de mult decale de n bits ou autre resultat

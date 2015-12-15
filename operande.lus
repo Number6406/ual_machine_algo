@@ -1,0 +1,46 @@
+-------------------------------
+-- partie opérative
+-------------------------------
+
+node bascule (ent,char,reset:bool) returns (sort:bool);
+-- le signal CK n'a pas à être explicité
+var D : bool; -- l'entrée de la bascule D simple interne
+let
+	D = not(reset) and muxES(char,ent,sort);
+	sort = true -> pre D;
+tel;
+
+node muxES(i,t,e:bool) returns (s:bool);
+let 
+	s = i and t or not i and e;
+tel;
+
+node mux1(op1,op2,x0,i,v1,v2:bool) returns (s:bool); 
+let
+	s = (not op1 and not op1 and x0) or (not op1 and op2 and i) or (op1 and not op2 and v2) or (op1 and op2 and v1);
+tel;
+
+node mux2(op1,op2,v0,ar,p1:bool) returns (s:bool);
+let
+	s = (not op1 and not op2 and v0) or (not op1 and op2 and ar) or (op1 and not op2 and p1);
+tel;
+
+node registre(const n : int; BusRes : bool^n; ch, reset : bool)
+	returns  (R : bool^n);
+let
+	R = bascule(false^n,BusRes, ch^n, reset^n);
+tel;
+
+node po (const n : int; chP1,chAr,chX0,chI,resetI,chV2,chV1,chV0,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,OpUAL1,OpUAL2,SRes,end:bool ; BusEntree : bool^n) returns (Z:bool; p1, ar, x0, i,sUAL, v2, v1, v0, op1, op2, v1, BusResultat : bool^n);
+let 
+	BusResultat = mux2(not(SRes^n),BusEntree,sUAL);
+	p1 = registre(BusResultat,chP1,false);
+	ar = registre(BusResultat,chAr,false);
+	x0 = registre(BusResultat,chX0,false);
+	i = registre(BusResultat,chI,false);
+	v2 = registre(BusResultat,chV2,false);
+	v1 = registre(BusResultat,chV1,false);
+	v0 = registre(BusResultat,chV0,false);
+tel;
+
+
