@@ -1,28 +1,37 @@
-include "controle.lus"
-include "operande.lus"
-
+-- Bonhoure
+-- Dalle
+-- RICM3 
 -------------------------------------------------
 -- Partie principale
 -------------------------------------------------
 
+-- On veut un calcul sur 8 bits pour plus de liberté sur les valeurs
 const n = 8;
 
+-- Appel aux autres parties du programme
+include "controle.lus"
+include "operande.lus"
+
+-- Fonction principale qui se charge de tout calculer
 node main (begin,reset,chP1,chAr,chX0 : bool; BusEntree : bool^n ) 
-	returns ( end, s0, s1, s2, s3, s4, s5, s6, s7, s8,Op1s1,Op1s2,Op2s1,Op2s2 ,OpUAL1,OpUAL2, Z,chI,resetI,chV2,chV1,chV0,resetV0,SRes: bool ; i, p1, x0, ar,UAL,v0,v1,v2,A,B,Res : int);
+	returns ( end, s0, s1, s2, s3, s4, s5, s6, s7, s8,Op1s1,Op1s2,Op2s1,Op2s2 ,OpUAL1,OpUAL2, Z,chI,resetI,chV2,chV1,chV0,resetV0,SRes: bool ; i, p1, x0, ar,sUAL,v0,v1,v2,A,B,Res : int);
 
 	var valI,valX0,valAr,valP1,valUAL,valV0,valV1,valV2,valA,valB, valBusRes : bool^n;
 
-
 let
-	(Z,valP1,valAr,valX0,valI,valUAL,valV2,valV1,valV0,valA,valB,valBusRes) = po (n,chP1,chAr,chX0,chI,resetI,chV2,chV1,chV0,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,OpUAL1,OpUAL2,SRes,end,BusEntree);
+
+	-- Dans un premier temps, on va appeler la partie opérative pour charger les variables et / ou les mettre à jour
+	(Z,valP1,valAr,valX0,valI,valUAL,valV2,valV1,valV0,valA,valB,valBusRes) = po (n,chP1,chAr,chX0,chI,resetI,chV2,chV1,chV0,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,OpUAL1,OpUAL2,SRes,end,BusEntree); 
 	 
+	-- La partie controle est appelée pour effectuer les calculs, s'il y en a, et retourner les nouvelles valeurs des variables
 	(end,chV0,chV1,chV2,chI,resetI,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,SRes,OpUAL1,OpUAL2,s0, s1, s2, s3, s4, s5, s6, s7, s8) = pc(reset,begin, Z);
 	
+	-- On affiche "proprement" les valeurs des variables, avec des entiers relatifs
 	i = entierrel (n,valI);
 	p1 = entierrel (n,valP1);
 	x0 = entierrel (n,valX0);
 	ar = entierrel (n,valAr);
-	UAL = entierrel (n,valUAL);
+	sUAL = entierrel (n,valUAL);
 	v0 = entierrel (n,valV0);
 	v1 = entierrel (n,valV1);
 	v2 = entierrel (n,valV2);

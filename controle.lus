@@ -1,11 +1,15 @@
+-- Bonhoure
+-- Dalle
+-- RICM3 2015
+--------------------------
 -- Partie controlleur
 
--- Fonction transition
-node transition (e0,e1,e2,e3,e4,e5,e6,e7,e8,begin,z:bool) returns (s0,s1,s2,s3,s4,s5,s6,s7,s8: bool)
+-- Fonction transition qui permet de calculer les états futurs
+node transition (e0,e1,e2,e3,e4,e5,e6,e7,e8,begin,z,reset:bool) returns (s0,s1,s2,s3,s4,s5,s6,s7,s8: bool)
 let
-	s0 = e8;
+	s0 = e8 or (e0 and (not begin)) or reset;
 	s1 = e0 and begin;
-	s2 = e1 and e7;
+	s2 = (e1 or e7);
 	s3 = e2 and not z;
 	s4 = e3;
 	s5 = e4;
@@ -14,12 +18,13 @@ let
 	s8 = e2 and z;
 tel;
 
+-- Fonction de sortie qui calcule les nouvelles valeurs des variables
 node sortie (e0,e1,e2,e3,e4,e5,e6,e7,e8: bool) returns (reset,end,charV0,charV1,charV2,charI,resetI,resetV0,op1S1,op1S2,op2S1,op2S2,opUAL1,opUAL2: bool)
 let
 	reset = e0;
 	end = e8;
 	charV0 = e5;
-	charV1 = e1 or e8;
+	charV1 = e1 or e6 or e8;
 	charV2 = e3 or e4;
 	charI = e7;
 	resetI = e1;
@@ -32,18 +37,26 @@ let
 	opUAL2 = e1 or e2 or e4 or e5 or e6;
 tel;
 
+-- Fonction principale de la partie controle
 node pc (reset,begin,z:bool) returns (end,charV0,charV1,charV2,charI,resetI,resetV0,op1S1,op1S2,op2S1,op2S2,SRes,opUAL1,opUAL2,s0, s1, s2, s3, s4, s5, s6, s7, s8:bool)
 	var e0,e1,e2,e3,e4,e5,e6,e7,e8:bool;
 let
-	(s0,s1,s2,s3,s4,s5,s6,s7,s8) = transition(e0,e1,e2,e3,e4,e5,e6,e7,e8,begin,z);
+
+	-- On sauvegarde les anciennes valeurs des états
 	e0 = true -> pre s0;
-	e1 = true -> pre s1;
-	e2 = true -> pre s2;
-	e3 = true -> pre s3;
-	e4 = true -> pre s4;
-	e5 = true -> pre s5;
-	e6 = true -> pre s6;
-	e7 = true -> pre s7;
-	e8 = true -> pre s8;
+	e1 = false -> pre s1;
+	e2 = false -> pre s2;
+	e3 = false -> pre s3;
+	e4 = false -> pre s4;
+	e5 = false -> pre s5;
+	e6 = false -> pre s6;
+	e7 = false -> pre s7;
+	e8 = false -> pre s8;
+	
+	
+	-- On calcule les états futurs
+	(s0,s1,s2,s3,s4,s5,s6,s7,s8) = transition(e0,e1,e2,e3,e4,e5,e6,e7,e8,begin,z,reset);
+	
+	-- On calcule les nouvelles valeurs des variables en sortie
 	(SRes,end,charV0,charV1,charV2,charI,resetI,resetV0,op1S1,op1S2,op2S1,op2S2,opUAL1,opUAL2) = sortie (e0,e1,e2,e3,e4,e5,e6,e7,e8);
 tel;

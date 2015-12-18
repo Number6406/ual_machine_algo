@@ -1,3 +1,8 @@
+-- Bonhoure
+-- Dalle
+-- RICM3 2015
+--------------------------
+
 include "UALSinus.lus"
 
 -------------------------------
@@ -8,46 +13,57 @@ node bascule (ent,char,reset:bool) returns (sort:bool);
 -- le signal CK n'a pas à être explicité
 var D : bool; -- l'entrée de la bascule D simple interne
 let
-	D = not(reset) and muxES(char,ent,sort);
-	sort = true -> pre D;
+	D = not(reset) and mux1(char,ent,sort);
+	sort = false -> pre D;
 tel;
 
-node muxES(i,t,e:bool) returns (s:bool);
-let 
+-- Node multiplexeur à deux entrées et un opérateur
+node mux1 (i,t,e:bool) returns (s:bool); 
+let
 	s = i and t or not i and e;
 tel;
 
-node muxA(op1,op2,x0,i,v1,v2:bool) returns (s:bool); 
+-- Multiplexeur à 4 entrées et deux opérateurs (pour les calculs de A et B en entrée d'UAL)
+node mux4(op1,op2: bool; a,b,c,d:bool^n) returns (s:bool^n); 
 let
-	s = (not op1 and not op1 and x0) or (not op1 and op2 and i) or (op1 and not op2 and v2) or (op1 and op2 and v1);
+	s[0..n-1] = (not op1^n and not op2^n and a[0..n-1]) or (not op1^n and op2^n and b[0..n-1]) or (op1^n and not op2^n and c[0..n-1]) or (op1^n and op2^n and d[0..n-1]);
 tel;
 
-node muxB(op1,op2,v0,ar,p1:bool) returns (s:bool);
-let
-	s = (not op1 and not op2 and v0) or (not op1 and op2 and ar) or (op1 and not op2 and p1);
-tel;
-
+-- Permet de stocker les anciennes valeurs des variables dans des bascules
 node registre(const n : int; BusRes : bool^n; ch, reset : bool)
 	returns  (R : bool^n);
 let
 	R = bascule(BusRes, ch^n, reset^n);
 tel;
 
+-- Partie principale de la PO
+-- Prend toutes les variables en entrées, pour effectuer les tests
 node po (const n : int; chP1,chAr,chX0,chI,resetI,chV2,chV1,chV0,resetV0,Op1s1,Op1s2,Op2s1,Op2s2,OpUAL1,OpUAL2,SRes,end:bool ; BusEntree : bool^n) returns (Z:bool; p1, ar, x0, i,sUAL, v2, v1, v0, A, B, BusResultat : bool^n);
 let 
-	BusResultat = muxES(not(SRes^n),BusEntree,sUAL);
-	p1 = registre(n,BusResultat,chP1,false);
-	ar = registre(n,BusResultat,chAr,false);
-	x0 = registre(n,BusResultat,chX0,false);
-	i	 = registre(n,BusResultat,chI ,false);
-	v2 = registre(n,BusResultat,chV2,false);
-	v1 = registre(n,BusResultat,chV1,false);
-	v0 = registre(n,BusResultat,chV0,false);
+	-- On charge les valeurs dans BusResultat en fonction de SRes (donc le bus d'entrée ou le résultat de l'UAL)
+	BusResultat[0..n-1] = mux2(SRes^n, BusEntree[0..n-1], sUAL[0..n-1]);
 	
-	A = muxA(Op1s1^n, Op1s2^n, x0, i, v1, v2);
-	B = muxB(Op2s1^n,Op2s2^n, v0, ar, p1);
+	-- On enregistre toutes les anciennes valeurs des variables à l'aide de bascules
+	p1[0..n-1] = registre(n,BusResultat[0..n-1],chP1,false);
+	ar[0..n-1] = registre(n,BusResultat[0..n-1],chAr,false);
+	x0[0..n-1] = registre(n,BusResultat[0..n-1],chX0,false);
+	i[0..n-1]	 = registre(n,BusResultat[0..n-1],chI ,resetI);
+	v2[0..n-1] = registre(n,BusResultat[0..n-1],chV2,false);
+	v1[0..n-1] = registre(n,BusResultat[0..n-1],chV1,false);
+	v0[0..n-1] = registre(n,BusResultat[0..n-1],chV0,resetV0);
 	
-	(Z,sUAL) = ual_n_bits (n,A,B,OpUAL1,OpUAL2); 
+	-- On calcule A et B à partir des opérandes Op1 et Op2
+	A[0..n-1] = mux4(Op1s1, Op1s2, x0[0..n-1], i[0..n-1], v2[0..n-1], v1[0..n-1]);
+	B[0..n-1] = mux4(Op2s1,Op2s2, v0[0..n-1], ar[0..n-1], p1[0..n-1], false^n);
+	
+	-- On effectue le calcul de l'UAL
+	(Z,sUAL[0..n-1]) = ual_n_bits (n,A[0..n-1],B[0..n-1],OpUAL1,OpUAL2); 
+	
+	-- Partie tests pour obtenir la valeur de A, B et S de façon entière relative
+	--a = entierrel(n,A[0..n-1]);
+	--b = entierrel(n,B[0..n-1]);
+	--s = entierrel(n,sUAL[0..n-1]);
+
 tel;
 
 

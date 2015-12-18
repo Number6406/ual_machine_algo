@@ -1,4 +1,3 @@
---------------------------------------------------------------
 -- Additionneur 1 bit
 node add1bit( x, y, rin : bool)
              returns
